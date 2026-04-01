@@ -26,7 +26,7 @@ public class SearchDatabaseAdapter {
         String sql = """
             SELECT f.path, f.filename, f.size, f.modified_at, f.extension, f.content
             FROM files f
-            JOIN files_fts fts ON f.id = fts.rowid
+            JOIN files_fts fts ON f.path = fts.path
             WHERE files_fts MATCH ?
             LIMIT 50;
         """;

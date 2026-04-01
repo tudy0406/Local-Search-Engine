@@ -32,12 +32,11 @@ public class SQLiteDatabaseManager implements DatabaseManager {
 
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS files (
-                    id INTEGER PRIMARY KEY,
-                    path TEXT UNIQUE,
+                    path TEXT PRIMARY KEY,
                     filename TEXT,
                     extension TEXT,
                     size INTEGER,
-                    modified_at Date,
+                    modified_at INTEGER,
                     content TEXT
                 );
             """);
@@ -52,22 +51,21 @@ public class SQLiteDatabaseManager implements DatabaseManager {
 
             stmt.execute("""
                 CREATE TRIGGER IF NOT EXISTS files_ai AFTER INSERT ON files BEGIN
-                  INSERT INTO files_fts(rowid, path, filename, content)
-                  VALUES (new.id, new.path, new.filename, new.content);
+                  INSERT INTO files_fts(path, filename, content)
+                  VALUES (new.path, new.filename, new.content);
                 END;
             """);
             stmt.execute("""
                CREATE TRIGGER IF NOT EXISTS files_ad AFTER DELETE ON files BEGIN
-                 DELETE FROM files_fts WHERE rowid = old.id;
+                 DELETE FROM files_fts WHERE path = old.path;
                END;
             """);
             stmt.execute("""
                 CREATE TRIGGER IF NOT EXISTS files_au AFTER UPDATE ON files BEGIN
                   UPDATE files_fts
-                  SET path = new.path,
-                      filename = new.filename,
+                  SET filename = new.filename,
                       content = new.content
-                  WHERE rowid = old.id;
+                  WHERE path = old.path;
                 END;
             """);
 
