@@ -6,10 +6,12 @@ public class QueryParser {
             return "";
         }
 
-        // basic normalization
-        return input
-                .trim()
+        // remove punctuation
+        String cleaned = input
                 .toLowerCase()
-                .replaceAll("\\s+", " AND ");
+                .replaceAll("[^a-z0-9\\s]", " "); // remove symbols like : , . !
+
+        // normalize spaces + AND logic
+        return cleaned.trim().replaceAll("\\s+", " AND ");
     }
 }
