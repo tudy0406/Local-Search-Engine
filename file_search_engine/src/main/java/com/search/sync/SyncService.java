@@ -31,6 +31,7 @@ public class SyncService {
         String root = configuration.getRootDir();
         int insertedFilesCount=0;
         int updatedFilesCount=0;
+        int skippedFilesCount=0;
         int indexedfileCount=0;
         long totalSize=0;
         long durationMs=0;
@@ -47,7 +48,7 @@ public class SyncService {
                 if (storedModified.isEmpty()) {
                     FileData data = buildFileData(path);
                     db.insert(data);
-                    indexedfileCount++;
+                    insertedFilesCount++;
                     totalSize += size;
                 }
 
@@ -58,7 +59,8 @@ public class SyncService {
                     totalSize += size;
                 }
 
-                else { //skip file
+                else {
+                    skippedFilesCount++;
                 }
 
             } catch (Exception e) {
@@ -68,11 +70,13 @@ public class SyncService {
         }
         long duration = System.currentTimeMillis() - startTime;
 
+        indexedfileCount = insertedFilesCount + updatedFilesCount;
         return new IndexReport(
                 root,
                 insertedFilesCount,
                 updatedFilesCount,
                 indexedfileCount,
+                skippedFilesCount,
                 totalSize,
                 duration
         );
