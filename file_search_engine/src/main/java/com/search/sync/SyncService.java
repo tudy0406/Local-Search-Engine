@@ -2,6 +2,7 @@ package com.search.sync;
 
 import com.search.config.ConfigLoader;
 import com.search.model.FileData;
+import com.search.report.IndexReport;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,23 +27,35 @@ public class SyncService {
         this.db = db;
     }
 
-    public void sync() {
-
+    public IndexReport sync() {
+        String root = configuration.getRootDir();
+        int insertedFilesCount=0;
+        int updatedFilesCount=0;
+        int indexedfileCount=0;
+        long totalSize=0;
+        long durationMs=0;
+        long size=0;
+        long startTime = System.currentTimeMillis();
         var files = crawler.crawl(Path.of(configuration.getRootDir()), configuration.getIgnoredExtensions(), configuration.getIgnoredDirectories());
 
         for (Path path : files) {
             try {
                 long currentModified = metadata.getModifiedTime(path);
+                size = metadata.getSize(path);
                 Optional<Long> storedModified = db.getLastModified(path);
 
                 if (storedModified.isEmpty()) {
                     FileData data = buildFileData(path);
                     db.insert(data);
+                    indexedfileCount++;
+                    totalSize += size;
                 }
 
                 else if (storedModified.get() != currentModified) {
                     FileData data = buildFileData(path);
                     db.update(data);
+                    updatedFilesCount++;
+                    totalSize += size;
                 }
 
                 else { //skip file
@@ -53,6 +66,16 @@ public class SyncService {
                 System.out.println(e.getMessage());
             }
         }
+        long duration = System.currentTimeMillis() - startTime;
+
+        return new IndexReport(
+                root,
+                insertedFilesCount,
+                updatedFilesCount,
+                indexedfileCount,
+                totalSize,
+                duration
+        );
     }
 
 
