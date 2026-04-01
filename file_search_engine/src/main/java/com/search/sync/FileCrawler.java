@@ -5,5 +5,5 @@ import java.util.List;
 import java.util.Set;
 
 public interface FileCrawler {
-    List<Path> crawl(Path root, Set<String> excludedExtensions);
+    List<Path> crawl(Path root, Set<String> excludedExtensions, Set<String> excludedDirectories);
 }

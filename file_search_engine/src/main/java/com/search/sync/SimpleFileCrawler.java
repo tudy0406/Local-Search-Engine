@@ -1,32 +1,55 @@
 package com.search.sync;
 
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.stream.Stream;
 
 public class SimpleFileCrawler implements FileCrawler {
 
     @Override
-    public List<Path> crawl(Path root, Set<String> excludedExtensions) {
+    public List<Path> crawl(Path root,
+                            Set<String> excludedExtensions,
+                            Set<String> excludedDirectories) {
+
         List<Path> result = new ArrayList<>();
 
-        try (Stream<Path> paths = Files.walk(root)) {
+        try {
+            Files.walkFileTree(root, new SimpleFileVisitor<>() {
 
-            paths.forEach(path -> {
-                try {
-                    if (Files.isRegularFile(path) && Files.isReadable(path)) {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
 
-                        String ext = getExtension(path);
+                    String dirName = dir.getFileName().toString().toLowerCase();
 
-                        if (!excludedExtensions.contains(ext)) {
-                            result.add(path);
-                        }
-
+                    if (excludedDirectories.contains(dirName)) {
+                        return FileVisitResult.SKIP_SUBTREE;
                     }
-                } catch (Exception e) {
-                    System.out.println("Skipping (error): " + path);
+
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+
+                    try {
+                        if (Files.isReadable(file)) {
+
+                            String ext = getExtension(file);
+
+                            if (!excludedExtensions.contains(ext)) {
+                                result.add(file);
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.out.println("Skipping (error): " + file);
+                    }
+
+                    return FileVisitResult.CONTINUE;
                 }
             });
 

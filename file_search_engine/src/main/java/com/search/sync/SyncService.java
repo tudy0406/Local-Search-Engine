@@ -1,5 +1,6 @@
 package com.search.sync;
 
+import com.search.config.ConfigLoader;
 import com.search.model.FileData;
 
 import java.nio.file.Files;
@@ -8,25 +9,26 @@ import java.util.Optional;
 import java.util.Set;
 
 public class SyncService {
-
+    private final ConfigLoader configuration;
     private final FileCrawler crawler;
     private final FileReader reader;
     private final MetadataExtractor metadata;
     private final DatabaseAdapter db;
 
-    public SyncService(FileCrawler crawler,
+    public SyncService(ConfigLoader configuration ,FileCrawler crawler,
                        FileReader reader,
                        MetadataExtractor metadata,
                        DatabaseAdapter db) {
+        this.configuration = configuration;
         this.crawler = crawler;
         this.reader = reader;
         this.metadata = metadata;
         this.db = db;
     }
 
-    public void sync(Path root, Set<String> excludedExtensions) {
+    public void sync() {
 
-        var files = crawler.crawl(root, excludedExtensions);
+        var files = crawler.crawl(Path.of(configuration.getRootDir()), configuration.getIgnoredExtensions(), configuration.getIgnoredDirectories());
 
         for (Path path : files) {
             try {
