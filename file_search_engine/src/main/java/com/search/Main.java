@@ -7,6 +7,7 @@ import com.search.service.QueryParser;
 import com.search.service.ResultFormatter;
 import com.search.service.SearchDatabaseAdapter;
 import com.search.service.SearchService;
+import com.search.service.ranking.*;
 import com.search.sync.*;
 import com.search.ui_cli.*;
 
@@ -30,7 +31,8 @@ public class Main {
         QueryParser parser = new QueryParser();
         SearchDatabaseAdapter searchDb = new SearchDatabaseAdapter(dbManager);
         ResultFormatter formatter = new ResultFormatter();
-        SearchService searchService = new SearchService(parser, searchDb, formatter);
+        RankingStrategy rankingStrategy = new ScoreBasedRankingStrategy();
+        SearchService searchService = new SearchService(parser, searchDb, formatter, rankingStrategy, syncDb);
 
         // UI
         InputHandler input = new InputHandler();
@@ -42,6 +44,8 @@ public class Main {
         IndexReport indexReport = syncService.sync();
         indexReport.print();
 
+        view.showRankingStrategy("ScoreBasedRankingStrategy");
+
 
         // MAIN LOOP
         while (true) {
@@ -51,6 +55,11 @@ public class Main {
             if (query.equalsIgnoreCase("exit")) {
                 view.showExit();
                 break;
+            } else if (query.equals("rank")) {
+                String rank = input.readRankingStrategy();
+                searchService.setRankingStrategy(RankingStrategyFactory.fromName(rank));
+                view.showRankingUpdated();
+                continue;
             }
 
             if (query.isBlank()) {

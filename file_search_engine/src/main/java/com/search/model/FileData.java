@@ -8,13 +8,17 @@ public class FileData {
     private String content;
     private long size;
     private long modifiedAt;
+    private long lastAccessed;
+    private long lastSearched;
     private String extension;
 
-    public FileData(Path path,  String content, long size, long modifiedAt, String extension) {
+    public FileData(Path path,  String content, long size, long modifiedAt, long lastAccessed, long lastSearched ,String extension) {
         this.path = path;
         this.content = content;
         this.size = size;
         this.modifiedAt = modifiedAt;
+        this.lastAccessed = lastAccessed;
+        this.lastSearched = lastSearched;
         this.extension = extension;
     }
 
@@ -48,6 +52,22 @@ public class FileData {
 
     public void setModifiedAt(long modifiedAt) {
         this.modifiedAt = modifiedAt;
+    }
+
+    public long getLastAccessed() {
+        return lastAccessed;
+    }
+
+    public void setLastAccessed(long lastAccessed) {
+        this.lastAccessed = lastAccessed;
+    }
+
+    public long getLastSearched() {
+        return lastSearched;
+    }
+
+    public void setLastSearched(long lastSearched) {
+        this.lastSearched = lastSearched;
     }
 
     public String getExtension() {
