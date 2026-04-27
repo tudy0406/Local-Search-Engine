@@ -19,4 +19,9 @@ public class View {
     public void showEmptyQuery() {
         System.out.println("Please enter a valid query.");
     }
+
+    public void showRankingStrategy(String rankingStrategy) {System.out.println("Ranking Strategy: " + rankingStrategy);}
+
+    public void showRankingUpdated() {System.out.println("Ranking updated.");}
+
 }

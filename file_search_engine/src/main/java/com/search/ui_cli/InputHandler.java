@@ -9,4 +9,9 @@ public class InputHandler {
         System.out.print("Search > ");
         return scanner.nextLine();
     }
+
+    public String readRankingStrategy() {
+        System.out.print("New Ranking Strategy : ");
+        return scanner.nextLine();
+    }
 }
