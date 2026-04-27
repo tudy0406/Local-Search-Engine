@@ -1,9 +1,6 @@
 package com.search.db;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 public class SQLiteDatabaseManager implements DatabaseManager {
 
@@ -37,6 +34,8 @@ public class SQLiteDatabaseManager implements DatabaseManager {
                     extension TEXT,
                     size INTEGER,
                     modified_at INTEGER,
+                    last_accessed_at INTEGER,
+                    last_searched INTEGER,
                     content TEXT
                 );
             """);
@@ -79,7 +78,18 @@ public class SQLiteDatabaseManager implements DatabaseManager {
         try {
             if (connection != null) connection.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("Error closing connection.");
+        }
+    }
+
+    public void addColumns(String table, String[] columns, String[] types){
+        try(Statement stmt = connection.createStatement()){
+            for(int i = 0; i < columns.length; i++){
+                String sql = String.format("ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s %s", table, columns[i], types[i]);
+                stmt.execute(sql);
+            }
+        }catch(SQLException e){
+            System.err.println("Error inserting columns.");
         }
     }
 }

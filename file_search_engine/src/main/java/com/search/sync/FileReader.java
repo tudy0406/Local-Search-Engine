@@ -8,7 +8,7 @@ public class FileReader {
         try {
             return Files.readString(path);
         } catch (Exception e) {
-            return null; // skip unreadable
+            return null;
         }
     }
 }

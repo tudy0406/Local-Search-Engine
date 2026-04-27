@@ -3,6 +3,7 @@ package com.search.sync;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.Date;
 
 public class MetadataExtractor {
@@ -18,5 +19,15 @@ public class MetadataExtractor {
         String name = path.getFileName().toString();
         int i = name.lastIndexOf('.');
         return i == -1 ? "" : name.substring(i).toLowerCase();
+    }
+
+    public long getLastAccessed(Path path) {
+        try {
+            return Files.readAttributes(path, BasicFileAttributes.class)
+                    .lastAccessTime()
+                    .toMillis();
+        } catch (IOException e) {
+            return 0L;
+        }
     }
 }

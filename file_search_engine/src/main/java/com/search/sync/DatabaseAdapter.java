@@ -21,8 +21,8 @@ public class DatabaseAdapter{
     public void insert(FileData file) {
         String sql = """
         INSERT INTO files
-        (path, filename, extension, size, modified_at, content)
-        VALUES (?, ?, ?, ?, ?, ?);
+        (path, filename, extension, size, modified_at, last_accessed_at, last_searched, content)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
     """;
 
         try{
@@ -33,7 +33,9 @@ public class DatabaseAdapter{
             stmt.setString(3, file.getExtension());
             stmt.setLong(4, file.getSize());
             stmt.setLong(5, file.getModifiedAt());
-            stmt.setString(6, file.getContent());
+            stmt.setLong(6, file.getLastAccessed());
+            stmt.setLong(7, file.getLastSearched());
+            stmt.setString(8, file.getContent());
 
             stmt.executeUpdate();
 
@@ -45,7 +47,7 @@ public class DatabaseAdapter{
     public void update(FileData file) {
         String sql = """
         UPDATE files
-        SET filename = ?, extension = ?, size = ?, modified_at = ?, content = ?
+        SET filename = ?, extension = ?, size = ?, modified_at = ?, last_accessed_at = ?, last_searched = ?, content = ?
         WHERE path = ?;
     """;
 
@@ -56,13 +58,15 @@ public class DatabaseAdapter{
             stmt.setString(2, file.getExtension());
             stmt.setLong(3, file.getSize());
             stmt.setLong(4, file.getModifiedAt());
-            stmt.setString(5, file.getContent());
-            stmt.setString(6, file.getPath().toString());
+            stmt.setLong(5, file.getLastAccessed());
+            stmt.setLong(6, file.getLastSearched());
+            stmt.setString(7, file.getContent());
+            stmt.setString(8, file.getPath().toString());
 
             stmt.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException("Error updating file: " + file.getPath(), e);
+            throw new RuntimeException("Error updating file: " + file.getPath() + e.getMessage());
         }
     }
 
@@ -94,6 +98,52 @@ public class DatabaseAdapter{
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(rs.getLong("modified_at"));
+                }
+                return Optional.empty();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching last modified: " + path, e);
+        }
+    }
+
+    public Optional<Long> getLastAccessed(Path path) {
+        String sql = """
+        SELECT last_accessed_at FROM files
+        WHERE path = ?;
+    """;
+
+        try{
+            Connection conn = dbManager.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, path.toString());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(rs.getLong("last_accessed_at"));
+                }
+                return Optional.empty();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching last modified: " + path, e);
+        }
+    }
+
+    public Optional<Long> getLastSearched(Path path) {
+        String sql = """
+        SELECT last_searched FROM files
+        WHERE path = ?;
+    """;
+
+        try{
+            Connection conn = dbManager.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, path.toString());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(rs.getLong("last_searched"));
                 }
                 return Optional.empty();
             }

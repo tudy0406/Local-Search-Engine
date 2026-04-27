@@ -6,6 +6,7 @@ import com.search.report.IndexReport;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 
@@ -32,39 +33,38 @@ public class SyncService {
         int insertedFilesCount=0;
         int updatedFilesCount=0;
         int skippedFilesCount=0;
-        int indexedfileCount=0;
+        int indexedfileCount;
         long totalSize=0;
-        long durationMs=0;
-        long size=0;
+        long size;
         long startTime = System.currentTimeMillis();
         var files = crawler.crawl(Path.of(configuration.getRootDir()), configuration.getIgnoredExtensions(), configuration.getIgnoredDirectories());
 
         for (Path path : files) {
             try {
-                long currentModified = metadata.getModifiedTime(path);
-                size = metadata.getSize(path);
-                Optional<Long> storedModified = db.getLastModified(path);
 
-                if (storedModified.isEmpty()) {
+                long currentModified = metadata.getModifiedTime(path);
+                long currentAccessed = metadata.getLastAccessed(path);
+                Optional<Long> storedModified = db.getLastModified(path);
+                Optional<Long> storedAccessed = db.getLastAccessed(path);
+
+                size = metadata.getSize(path);
+                if (storedModified.isEmpty() ||  storedAccessed.isEmpty()) {
                     FileData data = buildFileData(path);
                     db.insert(data);
                     insertedFilesCount++;
                     totalSize += size;
                 }
-
-                else if (storedModified.get() != currentModified) {
+                else if (storedModified.get() != currentModified ||  storedAccessed.get() != currentAccessed) {
                     FileData data = buildFileData(path);
                     db.update(data);
                     updatedFilesCount++;
                     totalSize += size;
                 }
-
                 else {
                     skippedFilesCount++;
                 }
 
             } catch (Exception e) {
-                //System.out.println("Error processing file: " + path);
                 System.out.println(e.getMessage());
             }
         }
@@ -90,11 +90,20 @@ public class SyncService {
             throw new RuntimeException("Failed to read content for: " + path);
         }
 
+        long lastSearched;
+        if(db.getLastSearched(path).isPresent()) {
+            lastSearched = db.getLastSearched(path).get();
+        }else{
+            lastSearched = 0L;
+        }
+
         return new FileData(
                 path,
                 content,
                 metadata.getSize(path),
                 metadata.getModifiedTime(path),
+                metadata.getLastAccessed(path),
+                lastSearched,
                 metadata.getExtension(path)
         );
     }
