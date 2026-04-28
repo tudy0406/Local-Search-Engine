@@ -2,7 +2,6 @@ package com.search;
 import com.search.config.ConfigLoader;
 import com.search.db.DatabaseManager;
 import com.search.db.SQLiteDatabaseManager;
-import com.search.model.FileData;
 import com.search.report.IndexReport;
 import com.search.service.QueryParser;
 import com.search.service.ResultFormatter;
@@ -12,10 +11,10 @@ import com.search.service.observer.QueryHistoryObserver;
 import com.search.service.observer.SearchObserver;
 import com.search.service.observer.SearchTracker;
 import com.search.service.ranking.*;
+import com.search.service.spelling_correction.SpellCorrector;
 import com.search.sync.*;
+import com.search.sync.words_processing.WordFrequencyService;
 import com.search.ui_cli.*;
-
-import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
@@ -30,8 +29,9 @@ public class Main {
         FileReader reader = new FileReader();
         MetadataExtractor extractor = new MetadataExtractor();
         DatabaseAdapter syncDb = new DatabaseAdapter(dbManager);
+        WordFrequencyService wordFrequencyService = new WordFrequencyService(syncDb);
 
-        SyncService syncService = new SyncService(configLoader, crawler, reader, extractor, syncDb);
+        SyncService syncService = new SyncService(configLoader, crawler, reader, extractor, syncDb, wordFrequencyService);
 
         // SEARCH
         QueryParser parser = new QueryParser();
@@ -41,7 +41,7 @@ public class Main {
         SearchTracker tracker = new  SearchTracker();
         SearchObserver observer = new QueryHistoryObserver();
         tracker.addObserver(observer);
-        SearchService searchService = new SearchService(parser, searchDb, formatter, rankingStrategy, syncDb, tracker, observer);
+
 
         // UI
         InputHandler input = new InputHandler();
@@ -52,6 +52,12 @@ public class Main {
 
         IndexReport indexReport = syncService.sync();
         indexReport.print();
+
+        //Words frequencies retrieval from database for spelling corrections
+        wordFrequencyService.load(syncService.loadWordsFrequencies());
+        SpellCorrector spellCorrector = new SpellCorrector(wordFrequencyService.getWordFreq());
+
+        SearchService searchService = new SearchService(parser, searchDb, formatter, rankingStrategy, syncDb, tracker, observer, spellCorrector);
 
         view.showRankingStrategy("ScoreBasedRankingStrategy");
 
