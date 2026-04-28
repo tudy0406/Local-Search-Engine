@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Optional;
 
 public class DatabaseAdapter{
@@ -41,6 +42,27 @@ public class DatabaseAdapter{
 
         } catch (SQLException e) {
             throw new RuntimeException("Error inserting file: " + e.getMessage());
+        }
+    }
+
+
+    public void updateLastSearched(FileData file) {
+        String sql = """
+        UPDATE files
+        SET last_searched = ?
+        WHERE path = ?;
+        """;
+
+        try{
+            Connection conn = dbManager.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setLong(1, file.getLastSearched());
+            stmt.setString(2, file.getPath().toString());
+
+            stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error updating file: " + file.getPath() + e.getMessage());
         }
     }
 
@@ -153,6 +175,23 @@ public class DatabaseAdapter{
         }
     }
 
+    public void updateLastAccessed(Path path, long lastAccessed) {
+        String sql = """
+            UPDATE files
+            SET last_accessed_at = ?
+            WHERE path = ?;
+        """;
+        try {
+            Connection conn = dbManager.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setLong(1, lastAccessed);
+            stmt.setString(2, path.toString());
+            stmt.executeUpdate();
+        }catch(SQLException e){
+            throw new RuntimeException("Error fetching last accessed: " + path, e);
+        }
+    }
+
     public boolean exists(Path path) {
         String sql = """
         SELECT 1 FROM files
@@ -173,4 +212,26 @@ public class DatabaseAdapter{
             throw new RuntimeException("Error checking existence: " + path, e);
         }
     }
+
+    public Map<String, Integer> loadWordFrequencies() throws SQLException {
+        return dbManager.loadWordFrequencies();
+    }
+
+
+    public Map<String, Integer> getFileWordCount(Path path) throws SQLException {
+        return dbManager.getFileWordCount(path);
+    }
+
+    public void insertOrUpdateWord(String word,  int count) throws SQLException {
+        dbManager.insertOrUpdateWord(word, count);
+    }
+
+    public void insertFileWord(Path path, String word, int count) throws SQLException {
+        dbManager.insertFileWord(path.toString(), word, count);
+    }
+
+    public void deleteFileWords(Path path) throws SQLException {
+        dbManager.deleteFileWords(path.toString());
+    }
+
 }
