@@ -14,4 +14,8 @@ public class InputHandler {
         System.out.print("New Ranking Strategy : ");
         return scanner.nextLine();
     }
+
+    public String readPrefix() {
+        return scanner.nextLine();
+    }
 }

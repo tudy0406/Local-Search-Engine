@@ -2,14 +2,20 @@ package com.search;
 import com.search.config.ConfigLoader;
 import com.search.db.DatabaseManager;
 import com.search.db.SQLiteDatabaseManager;
+import com.search.model.FileData;
 import com.search.report.IndexReport;
 import com.search.service.QueryParser;
 import com.search.service.ResultFormatter;
 import com.search.service.SearchDatabaseAdapter;
 import com.search.service.SearchService;
+import com.search.service.observer.QueryHistoryObserver;
+import com.search.service.observer.SearchObserver;
+import com.search.service.observer.SearchTracker;
 import com.search.service.ranking.*;
 import com.search.sync.*;
 import com.search.ui_cli.*;
+
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
@@ -32,7 +38,10 @@ public class Main {
         SearchDatabaseAdapter searchDb = new SearchDatabaseAdapter(dbManager);
         ResultFormatter formatter = new ResultFormatter();
         RankingStrategy rankingStrategy = new ScoreBasedRankingStrategy();
-        SearchService searchService = new SearchService(parser, searchDb, formatter, rankingStrategy, syncDb);
+        SearchTracker tracker = new  SearchTracker();
+        SearchObserver observer = new QueryHistoryObserver();
+        tracker.addObserver(observer);
+        SearchService searchService = new SearchService(parser, searchDb, formatter, rankingStrategy, syncDb, tracker, observer);
 
         // UI
         InputHandler input = new InputHandler();
@@ -59,6 +68,10 @@ public class Main {
                 String rank = input.readRankingStrategy();
                 searchService.setRankingStrategy(RankingStrategyFactory.fromName(rank));
                 view.showRankingUpdated();
+                continue;
+            }else if (query.equals("suggest")) {
+                String prefix = input.readPrefix();
+                searchService.suggest(prefix);
                 continue;
             }
 

@@ -1,6 +1,8 @@
 package com.search.service;
 
 import com.search.model.FileData;
+import com.search.service.observer.SearchObserver;
+import com.search.service.observer.SearchTracker;
 import com.search.service.ranking.RankingStrategy;
 import com.search.sync.DatabaseAdapter;
 
@@ -13,17 +15,24 @@ public class SearchService {
     private final ResultFormatter formatter;
     private RankingStrategy rankingStrategy;
     private final DatabaseAdapter syncDatabaseAdapter;
+    private final SearchTracker tracker;
+    private final SearchObserver observer;
+
 
     public SearchService(QueryParser parser,
                          SearchDatabaseAdapter db,
                          ResultFormatter formatter,
                          RankingStrategy rankingStrategy,
-                         DatabaseAdapter syncDatabaseAdapter) {
+                         DatabaseAdapter syncDatabaseAdapter,
+                         SearchTracker tracker,
+                         SearchObserver observer) {
         this.parser = parser;
         this.db = db;
         this.formatter = formatter;
         this.rankingStrategy = rankingStrategy;
         this.syncDatabaseAdapter = syncDatabaseAdapter;
+        this.tracker = tracker;
+        this.observer = observer;
     }
 
     public void search(String rawQuery) {
@@ -38,10 +47,22 @@ public class SearchService {
         List<FileData> results = db.search(parsedQuery, rankingStrategy);
 
         formatter.printResults(results);
-
+        tracker.notifyObservers(rawQuery, results);
         for(FileData fileData : results) {
             fileData.setLastSearched(System.currentTimeMillis());
             syncDatabaseAdapter.update(fileData);
+        }
+    }
+
+    public void suggest(String rawQuery) {
+        List<String> suggestions = observer.suggest(rawQuery);
+        System.out.println("Suggestions: ");
+        if(!suggestions.isEmpty()) {
+            for (String suggestion : suggestions) {
+                System.out.println(suggestion);
+            }
+        }else{
+            System.out.println("No suggestions.");
         }
     }
 
