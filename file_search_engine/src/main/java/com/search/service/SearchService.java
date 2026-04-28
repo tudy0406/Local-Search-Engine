@@ -4,6 +4,7 @@ import com.search.model.FileData;
 import com.search.service.observer.SearchObserver;
 import com.search.service.observer.SearchTracker;
 import com.search.service.ranking.RankingStrategy;
+import com.search.service.spelling_correction.SpellCorrector;
 import com.search.sync.DatabaseAdapter;
 
 import java.util.List;
@@ -17,6 +18,7 @@ public class SearchService {
     private final DatabaseAdapter syncDatabaseAdapter;
     private final SearchTracker tracker;
     private final SearchObserver observer;
+    private final SpellCorrector spellCorrector;
 
 
     public SearchService(QueryParser parser,
@@ -25,7 +27,8 @@ public class SearchService {
                          RankingStrategy rankingStrategy,
                          DatabaseAdapter syncDatabaseAdapter,
                          SearchTracker tracker,
-                         SearchObserver observer) {
+                         SearchObserver observer,
+                         SpellCorrector spellCorrector) {
         this.parser = parser;
         this.db = db;
         this.formatter = formatter;
@@ -33,11 +36,17 @@ public class SearchService {
         this.syncDatabaseAdapter = syncDatabaseAdapter;
         this.tracker = tracker;
         this.observer = observer;
+        this.spellCorrector = spellCorrector;
     }
 
     public void search(String rawQuery) {
+        String correctedQuery = spellCorrector.correctQuery(rawQuery);
 
-        String parsedQuery = parser.parse(rawQuery);
+        if (!correctedQuery.equals(rawQuery)) {
+            System.out.println("\n------------------\nDid you mean: " + correctedQuery + " ?\n------------------\n");
+        }
+
+        String parsedQuery = parser.parse(correctedQuery);
 
         if (parsedQuery.isEmpty()) {
             System.out.println("Empty query.");
@@ -47,10 +56,10 @@ public class SearchService {
         List<FileData> results = db.search(parsedQuery, rankingStrategy);
 
         formatter.printResults(results);
-        tracker.notifyObservers(rawQuery, results);
+        tracker.notifyObservers(correctedQuery, results);
         for(FileData fileData : results) {
             fileData.setLastSearched(System.currentTimeMillis());
-            syncDatabaseAdapter.update(fileData);
+            syncDatabaseAdapter.updateLastSearched(fileData);
         }
     }
 
