@@ -78,4 +78,8 @@ public class SearchService {
     public void setRankingStrategy(RankingStrategy rankingStrategy) {
         this.rankingStrategy = rankingStrategy;
     }
+
+    public RankingStrategy getRankingStrategy() {
+        return this.rankingStrategy;
+    }
 }
