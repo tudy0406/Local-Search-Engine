@@ -74,6 +74,7 @@ public class Main {
                 String rank = input.readRankingStrategy();
                 searchService.setRankingStrategy(RankingStrategyFactory.fromName(rank));
                 view.showRankingUpdated();
+                System.out.println("Ranking-strategy -> " + searchService.getRankingStrategy().toString());
                 continue;
             }else if (query.equals("suggest")) {
                 String prefix = input.readPrefix();
